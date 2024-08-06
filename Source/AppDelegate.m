@@ -11,6 +11,7 @@
 	                            NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
 	                    backing:NSBackingStoreBuffered
 	                      defer:NO];
+	window.contentView = [[MainView alloc] init];
 	[window center];
 	[window makeKeyAndOrderFront:nil];
 }
