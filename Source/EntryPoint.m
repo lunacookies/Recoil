@@ -1,5 +1,22 @@
 @import AppKit;
 @import Metal;
+@import simd;
+
+typedef int8_t s8;
+typedef int16_t s16;
+typedef int32_t s32;
+typedef int64_t s64;
+
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+
+typedef float f32;
+typedef double f64;
+typedef simd_float2 f32x2;
+typedef simd_float3 f32x3;
+typedef simd_float4 f32x4;
 
 #include "AppDelegate.h"
 #include "MainView.h"
@@ -7,17 +24,7 @@
 #include "AppDelegate.m"
 #include "MainView.m"
 
-typedef int8_t int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
-
-typedef uint8_t uint8;
-typedef uint16_t uint16;
-typedef uint32_t uint32;
-typedef uint64_t uint64;
-
-int32
+s32
 main(void)
 {
 	setenv("MTL_SHADER_VALIDATION", "1", 1);

@@ -29,6 +29,11 @@ clang \
 	-Wstrict-prototypes \
 	"Source/EntryPoint.m"
 
+xcrun metal \
+	-o "Build/Recoil.app/Contents/Resources/default.metallib" \
+	-gline-tables-only -frecord-sources \
+	"Source/Shaders.metal"
+
 cp "Data/Recoil.entitlements" "Build/Recoil.entitlements"
 /usr/libexec/PlistBuddy -c 'Add :com.apple.security.get-task-allow bool YES' \
 	"Build/Recoil.entitlements"
