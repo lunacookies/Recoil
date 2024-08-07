@@ -41,6 +41,9 @@
 		@[ [NSTextField labelWithString:@"Step Multiplier:"], stepMultiplierSlider ],
 	]];
 
+	gridView.rowAlignment = NSGridRowAlignmentFirstBaseline;
+	[gridView columnAtIndex:0].xPlacement = NSGridCellPlacementTrailing;
+
 	gridView.translatesAutoresizingMaskIntoConstraints = NO;
 	[self.view addSubview:gridView];
 	NSLayoutGuide *guide = self.view.layoutMarginsGuide;
