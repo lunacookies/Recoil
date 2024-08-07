@@ -18,11 +18,18 @@ typedef simd_float2 f32x2;
 typedef simd_float3 f32x3;
 typedef simd_float4 f32x4;
 
+static NSString *const ConfigChangedNotificationName = @"ConfigChanged";
+
 #include "AppDelegate.h"
-#include "MainView.h"
+#include "MainViewController.h"
+#include "InspectorViewController.h"
+#include "PreviewView.h"
+#include "Config.h"
 
 #include "AppDelegate.m"
-#include "MainView.m"
+#include "MainViewController.m"
+#include "InspectorViewController.m"
+#include "PreviewView.m"
 
 s32
 main(void)

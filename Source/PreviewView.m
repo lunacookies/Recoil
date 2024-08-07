@@ -12,8 +12,11 @@ struct Arguments
 	u64 positionsAddress;
 };
 
-@implementation MainView
+@implementation PreviewView
 {
+	NSNotificationCenter *notificationCenter;
+	Config *config;
+
 	id<MTLDevice> device;
 	id<MTLCommandQueue> commandQueue;
 	IOSurfaceRef iosurface;
@@ -26,11 +29,17 @@ struct Arguments
 	id<MTLBuffer> positionsBuffer;
 }
 
-- (instancetype)initWithFrame:(NSRect)frame
+- (instancetype)initWithNotificationCenter:(NSNotificationCenter *)notificationCenter_
 {
-	self = [super initWithFrame:frame];
-	self.wantsLayer = YES;
+	self = [super init];
 
+	notificationCenter = notificationCenter_;
+	[notificationCenter addObserver:self
+	                       selector:@selector(didChangeConfig:)
+	                           name:ConfigChangedNotificationName
+	                         object:nil];
+
+	self.wantsLayer = YES;
 	device = MTLCreateSystemDefaultDevice();
 	commandQueue = [device newCommandQueue];
 
@@ -55,6 +64,11 @@ struct Arguments
 	                                              MTLResourceStorageModeShared |
 	                                              MTLResourceHazardTrackingModeTracked];
 	positions = positionsBuffer.contents;
+
+	[NSLayoutConstraint activateConstraints:@[
+		[self.widthAnchor constraintGreaterThanOrEqualToConstant:100],
+		[self.heightAnchor constraintGreaterThanOrEqualToConstant:100],
+	]];
 
 	return self;
 }
@@ -90,8 +104,7 @@ struct Arguments
 		positions[pointCount] = (f32x2){cursor, current};
 		cursor += step;
 		f32 delta = target - current;
-		f32 rate = 0.1f;
-		current += rate * delta;
+		current += config.rate * delta;
 	}
 
 	NSColor *color = [NSColor.labelColor colorUsingColorSpace:self.window.colorSpace];
@@ -171,6 +184,12 @@ struct Arguments
 	texture.label = @"Layer Contents";
 
 	self.layer.contents = (__bridge id)iosurface;
+}
+
+- (void)didChangeConfig:(NSNotification *)notification
+{
+	config = notification.object;
+	self.needsDisplay = YES;
 }
 
 @end

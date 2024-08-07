@@ -5,14 +5,7 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
-	window = [[NSWindow alloc]
-	        initWithContentRect:NSMakeRect(0, 0, 700, 500)
-	                  styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
-	                            NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
-	                    backing:NSBackingStoreBuffered
-	                      defer:NO];
-	window.contentView = [[MainView alloc] init];
-	[window center];
+	window = [NSWindow windowWithContentViewController:[[MainViewController alloc] init]];
 	[window makeKeyAndOrderFront:nil];
 }
 
