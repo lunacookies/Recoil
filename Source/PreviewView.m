@@ -113,6 +113,14 @@ struct Arguments
 	arguments.color.b = (f32)color.blueComponent;
 	arguments.color.a = (f32)color.alphaComponent;
 
+	NSColor *backgroundColor =
+	        [NSColor.textBackgroundColor colorUsingColorSpace:self.window.colorSpace];
+	MTLClearColor clearColor = {0};
+	clearColor.red = backgroundColor.redComponent;
+	clearColor.green = backgroundColor.greenComponent;
+	clearColor.blue = backgroundColor.blueComponent;
+	clearColor.alpha = backgroundColor.alphaComponent;
+
 	arguments.positionsAddress = positionsBuffer.gpuAddress;
 
 	id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
@@ -120,7 +128,7 @@ struct Arguments
 	MTLRenderPassDescriptor *descriptor = [[MTLRenderPassDescriptor alloc] init];
 	descriptor.colorAttachments[0].texture = texture;
 	descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-	descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
+	descriptor.colorAttachments[0].clearColor = clearColor;
 
 	id<MTLRenderCommandEncoder> encoder =
 	        [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
