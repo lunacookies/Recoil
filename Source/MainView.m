@@ -68,20 +68,31 @@ struct Arguments
 {
 	f32 scaleFactor = (f32)self.window.backingScaleFactor;
 
-	pointCount = 3;
-	positions[0] = (f32x2){100, 100};
-	positions[1] = (f32x2){200, 100};
-	positions[2] = (f32x2){50, 300};
-	for (u64 i = 0; i < pointCount; i++)
-	{
-		positions[i] *= scaleFactor;
-	}
-
 	Arguments arguments = {0};
 
 	NSSize resolution = [self convertSizeToBacking:self.bounds.size];
 	arguments.resolution.x = (f32)resolution.width;
 	arguments.resolution.y = (f32)resolution.height;
+
+	arguments.pointSize = 10 * scaleFactor;
+
+	f32 current = 0;
+	f32 target = arguments.resolution.y;
+	f32 cursor = 0;
+	f32 step = 1.5f * arguments.pointSize;
+	for (pointCount = 0; pointCount < pointCapacity; pointCount++)
+	{
+		if (cursor > arguments.resolution.x + arguments.pointSize / 2)
+		{
+			break;
+		}
+
+		positions[pointCount] = (f32x2){cursor, current};
+		cursor += step;
+		f32 delta = target - current;
+		f32 rate = 0.1f;
+		current += rate * delta;
+	}
 
 	NSColor *color = [NSColor.labelColor colorUsingColorSpace:self.window.colorSpace];
 	arguments.color.r = (f32)color.redComponent;
@@ -89,7 +100,6 @@ struct Arguments
 	arguments.color.b = (f32)color.blueComponent;
 	arguments.color.a = (f32)color.alphaComponent;
 
-	arguments.pointSize = 10 * scaleFactor;
 	arguments.positionsAddress = positionsBuffer.gpuAddress;
 
 	id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
