@@ -93,7 +93,7 @@ struct Arguments
 	f32 current = 0;
 	f32 target = arguments.resolution.y;
 	f32 cursor = 0;
-	f32 step = 1.5f * arguments.pointSize;
+	f32 step = config.stepMultiplier * arguments.pointSize;
 	for (pointCount = 0; pointCount < pointCapacity; pointCount++)
 	{
 		if (cursor > arguments.resolution.x + arguments.pointSize / 2)

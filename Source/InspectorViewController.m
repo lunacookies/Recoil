@@ -2,6 +2,7 @@
 {
 	NSNotificationCenter *notificationCenter;
 	NSSlider *rateSlider;
+	NSSlider *stepMultiplierSlider;
 }
 
 - (instancetype)initWithNotificationCenter:(NSNotificationCenter *)notificationCenter_
@@ -21,8 +22,15 @@
 	                                target:self
 	                                action:@selector(didChangeConfig:)];
 
+	stepMultiplierSlider = [NSSlider sliderWithValue:1.5
+	                                        minValue:0
+	                                        maxValue:4
+	                                          target:self
+	                                          action:@selector(didChangeConfig:)];
+
 	NSGridView *gridView = [NSGridView gridViewWithViews:@[
 		@[ [NSTextField labelWithString:@"Rate:"], rateSlider ],
+		@[ [NSTextField labelWithString:@"Step Multiplier:"], stepMultiplierSlider ],
 	]];
 
 	gridView.translatesAutoresizingMaskIntoConstraints = NO;
@@ -43,6 +51,7 @@
 {
 	Config *config = [[Config alloc] init];
 	config.rate = rateSlider.floatValue;
+	config.stepMultiplier = stepMultiplierSlider.floatValue;
 	[notificationCenter postNotificationName:ConfigChangedNotificationName object:config];
 }
 
