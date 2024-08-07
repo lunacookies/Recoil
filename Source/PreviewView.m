@@ -88,7 +88,7 @@ struct Arguments
 	arguments.resolution.x = (f32)resolution.width;
 	arguments.resolution.y = (f32)resolution.height;
 
-	arguments.pointSize = 10 * scaleFactor;
+	arguments.pointSize = config.pointSize * scaleFactor;
 
 	f32 current = 0;
 	f32 target = arguments.resolution.y;

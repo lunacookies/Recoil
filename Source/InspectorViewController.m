@@ -2,6 +2,7 @@
 {
 	NSNotificationCenter *notificationCenter;
 	NSSlider *rateSlider;
+	NSSlider *pointSizeSlider;
 	NSSlider *stepMultiplierSlider;
 }
 
@@ -22,6 +23,12 @@
 	                                target:self
 	                                action:@selector(didChangeConfig:)];
 
+	pointSizeSlider = [NSSlider sliderWithValue:10
+	                                   minValue:0
+	                                   maxValue:100
+	                                     target:self
+	                                     action:@selector(didChangeConfig:)];
+
 	stepMultiplierSlider = [NSSlider sliderWithValue:1.5
 	                                        minValue:0
 	                                        maxValue:4
@@ -30,6 +37,7 @@
 
 	NSGridView *gridView = [NSGridView gridViewWithViews:@[
 		@[ [NSTextField labelWithString:@"Rate:"], rateSlider ],
+		@[ [NSTextField labelWithString:@"Point Size:"], pointSizeSlider ],
 		@[ [NSTextField labelWithString:@"Step Multiplier:"], stepMultiplierSlider ],
 	]];
 
@@ -40,7 +48,7 @@
 		[gridView.topAnchor constraintEqualToAnchor:guide.topAnchor],
 		[gridView.leadingAnchor constraintEqualToAnchor:guide.leadingAnchor],
 		[gridView.trailingAnchor constraintEqualToAnchor:guide.trailingAnchor],
-		[gridView.bottomAnchor constraintEqualToAnchor:guide.bottomAnchor],
+		[guide.bottomAnchor constraintGreaterThanOrEqualToAnchor:gridView.bottomAnchor],
 		[rateSlider.widthAnchor constraintEqualToConstant:150],
 	]];
 
@@ -51,6 +59,7 @@
 {
 	Config *config = [[Config alloc] init];
 	config.rate = rateSlider.floatValue;
+	config.pointSize = pointSizeSlider.floatValue;
 	config.stepMultiplier = stepMultiplierSlider.floatValue;
 	[notificationCenter postNotificationName:ConfigChangedNotificationName object:config];
 }
