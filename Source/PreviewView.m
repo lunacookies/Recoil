@@ -104,7 +104,7 @@ struct Arguments
 		positions[pointCount] = (f32x2){cursor, current};
 		cursor += step;
 		f32 delta = target - current;
-		current += config.rate * delta;
+		current += (1 - exp2(-step / config.slope)) * delta;
 	}
 
 	NSColor *color = [NSColor.labelColor colorUsingColorSpace:self.window.colorSpace];

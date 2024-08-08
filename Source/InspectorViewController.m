@@ -1,7 +1,7 @@
 @implementation InspectorViewController
 {
 	NSNotificationCenter *notificationCenter;
-	NSSlider *rateSlider;
+	NSSlider *slopeSlider;
 	NSSlider *pointSizeSlider;
 	NSSlider *stepMultiplierSlider;
 }
@@ -17,11 +17,11 @@
 {
 	[super viewDidLoad];
 
-	rateSlider = [NSSlider sliderWithValue:0.1
-	                              minValue:0
-	                              maxValue:1
-	                                target:self
-	                                action:@selector(didChangeConfig:)];
+	slopeSlider = [NSSlider sliderWithValue:100
+	                               minValue:0
+	                               maxValue:500
+	                                 target:self
+	                                 action:@selector(didChangeConfig:)];
 
 	pointSizeSlider = [NSSlider sliderWithValue:10
 	                                   minValue:0
@@ -36,7 +36,7 @@
 	                                          action:@selector(didChangeConfig:)];
 
 	NSGridView *gridView = [NSGridView gridViewWithViews:@[
-		@[ [NSTextField labelWithString:@"Rate:"], rateSlider ],
+		@[ [NSTextField labelWithString:@"Slope:"], slopeSlider ],
 		@[ [NSTextField labelWithString:@"Point Size:"], pointSizeSlider ],
 		@[ [NSTextField labelWithString:@"Step Multiplier:"], stepMultiplierSlider ],
 	]];
@@ -52,7 +52,7 @@
 		[gridView.leadingAnchor constraintEqualToAnchor:guide.leadingAnchor],
 		[gridView.trailingAnchor constraintEqualToAnchor:guide.trailingAnchor],
 		[guide.bottomAnchor constraintGreaterThanOrEqualToAnchor:gridView.bottomAnchor],
-		[rateSlider.widthAnchor constraintEqualToConstant:150],
+		[slopeSlider.widthAnchor constraintEqualToConstant:150],
 	]];
 
 	[self didChangeConfig:nil];
@@ -61,7 +61,7 @@
 - (void)didChangeConfig:(id)sender
 {
 	Config *config = [[Config alloc] init];
-	config.rate = rateSlider.floatValue;
+	config.slope = slopeSlider.floatValue;
 	config.pointSize = pointSizeSlider.floatValue;
 	config.stepMultiplier = stepMultiplierSlider.floatValue;
 	[notificationCenter postNotificationName:ConfigChangedNotificationName object:config];
