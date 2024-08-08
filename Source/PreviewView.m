@@ -58,7 +58,7 @@ struct Arguments
 	attachmentDescriptor.sourceAlphaBlendFactor = MTLBlendFactorOne;
 	pipelineState = [device newRenderPipelineStateWithDescriptor:descriptor error:nil];
 
-	pointCapacity = 1024;
+	pointCapacity = 1024 * 1024;
 	positionsBuffer = [device newBufferWithLength:pointCapacity * sizeof(positions[0])
 	                                      options:MTLResourceCPUCacheModeDefaultCache |
 	                                              MTLResourceStorageModeShared |
@@ -90,8 +90,9 @@ struct Arguments
 
 	arguments.pointSize = config.pointSize * scaleFactor;
 
+	f32 velocity = 0;
 	f32 current = 0;
-	f32 target = arguments.resolution.y;
+	f32 target = arguments.resolution.y * 0.5f;
 	f32 cursor = 0;
 	f32 step = config.stepMultiplier * arguments.pointSize;
 	for (pointCount = 0; pointCount < pointCapacity; pointCount++)
@@ -103,8 +104,13 @@ struct Arguments
 
 		positions[pointCount] = (f32x2){cursor, current};
 		cursor += step;
-		f32 delta = target - current;
-		current += (1 - exp2(-step / config.slope)) * delta;
+
+		f32 displacement = current - target;
+		f32 tensionForce = -config.tension * displacement;
+		f32 frictionForce = -config.friction * velocity;
+		f32 acceleration = (tensionForce + frictionForce) / config.mass;
+		velocity += acceleration * step;
+		current += velocity * step;
 	}
 
 	NSColor *color = [NSColor.labelColor colorUsingColorSpace:self.window.colorSpace];
