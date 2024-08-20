@@ -61,6 +61,12 @@ struct ColorizeArguments
 		MTLRenderPipelineColorAttachmentDescriptor *attachmentDescriptor =
 		        descriptor.colorAttachments[0];
 		attachmentDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
+		attachmentDescriptor.blendingEnabled = YES;
+		attachmentDescriptor.destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+		attachmentDescriptor.destinationAlphaBlendFactor =
+		        MTLBlendFactorOneMinusSourceAlpha;
+		attachmentDescriptor.sourceRGBBlendFactor = MTLBlendFactorOne;
+		attachmentDescriptor.sourceAlphaBlendFactor = MTLBlendFactorOne;
 		pointsPipelineState = [device newRenderPipelineStateWithDescriptor:descriptor
 		                                                             error:nil];
 	}

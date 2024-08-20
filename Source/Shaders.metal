@@ -49,7 +49,13 @@ vertex PointsRasterizerData
 PointsVertex(u32 vertexID [[vertex_id]], u32 instanceID [[instance_id]], constant PointsArguments &arguments)
 {
 	f32x2 center = arguments.positions[instanceID];
-	f32x2 position = center + arguments.pointSize * (rectVertices[vertexID] - 0.5f);
+	f32 padding = 1; // stop anti-aliased edges from being cut off
+	f32x2 p0 = center - arguments.pointSize / 2 - padding;
+	f32x2 p1 = center + arguments.pointSize / 2 + padding;
+	p0 = floor(p0);
+	p1 = ceil(p1);
+
+	f32x2 position = p0 + rectVertices[vertexID] * (p1 - p0);
 
 	PointsRasterizerData output = {0};
 	output.positionNDC.xy = position;
@@ -62,14 +68,12 @@ PointsVertex(u32 vertexID [[vertex_id]], u32 instanceID [[instance_id]], constan
 }
 
 fragment f32x4
-PointsFragment(PointsRasterizerData input [[stage_in]], constant PointsArguments &arguments, f32x4 previousColor [[color(0)]])
+PointsFragment(PointsRasterizerData input [[stage_in]], constant PointsArguments &arguments)
 {
-	f32x4 result = previousColor;
 	f32 distanceToCenter = length(abs(input.position - input.center));
-	f32 pointRadius = arguments.pointSize/2;
-	result += distanceToCenter < pointRadius;
-	result = min(result, 1.f);
-	return result;
+	f32 pointRadius = arguments.pointSize / 2;
+	f32 distanceToEdge =  distanceToCenter - pointRadius;
+	return 1 - clamp(distanceToEdge, 0.f, 1.f);
 }
 
 fragment f32x4
