@@ -16,15 +16,20 @@ typedef float2 f32x2;
 typedef float3 f32x3;
 typedef float4 f32x4;
 
-struct Arguments
+struct PointsArguments
 {
 	f32x2 resolution;
-	f32x4 color;
 	f32 pointSize;
 	device f32x2 *positions;
 };
 
-struct RasterizerData
+struct ColorizeArguments
+{
+	f32x4 backgroundColor;
+	f32x4 pointColor;
+};
+
+struct PointsRasterizerData
 {
 	f32x4 positionNDC [[position]];
 	f32x2 position;
@@ -40,13 +45,13 @@ constant f32x2 rectVertices[] = {
 	f32x2(1,0),
 };
 
-vertex RasterizerData
-VertexMain(u32 vertexID [[vertex_id]], u32 instanceID [[instance_id]], constant Arguments &arguments)
+vertex PointsRasterizerData
+PointsVertex(u32 vertexID [[vertex_id]], u32 instanceID [[instance_id]], constant PointsArguments &arguments)
 {
 	f32x2 center = arguments.positions[instanceID];
 	f32x2 position = center + arguments.pointSize * (rectVertices[vertexID] - 0.5f);
 
-	RasterizerData output = {0};
+	PointsRasterizerData output = {0};
 	output.positionNDC.xy = position;
 	output.positionNDC.xy /= arguments.resolution;
 	output.positionNDC.xy = 2 * output.positionNDC.xy - 1;
@@ -57,17 +62,18 @@ VertexMain(u32 vertexID [[vertex_id]], u32 instanceID [[instance_id]], constant 
 }
 
 fragment f32x4
-FragmentMain(RasterizerData input [[stage_in]], constant Arguments &arguments)
+PointsFragment(PointsRasterizerData input [[stage_in]], constant PointsArguments &arguments, f32x4 previousColor [[color(0)]])
 {
-	f32x4 result = 0;
-
+	f32x4 result = previousColor;
 	f32 distanceToCenter = length(abs(input.position - input.center));
 	f32 pointRadius = arguments.pointSize/2;
-	if (distanceToCenter < pointRadius)
-	{
-		result = arguments.color;
-		result.rgb *= result.a;
-	}
-
+	result += distanceToCenter < pointRadius;
+	result = min(result, 1.f);
 	return result;
+}
+
+fragment f32x4
+Colorize(constant ColorizeArguments &arguments, f32x4 color [[color(0)]])
+{
+	return mix(arguments.backgroundColor, arguments.pointColor, color.a);
 }

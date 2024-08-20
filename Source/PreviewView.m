@@ -3,13 +3,19 @@ CALayer (Private)
 - (void)setContentsChanged;
 @end
 
-typedef struct Arguments Arguments;
-struct Arguments
+typedef struct PointsArguments PointsArguments;
+struct PointsArguments
 {
 	f32x2 resolution;
-	f32x4 color;
 	f32 pointSize;
 	u64 positionsAddress;
+};
+
+typedef struct ColorizeArguments ColorizeArguments;
+struct ColorizeArguments
+{
+	f32x4 backgroundColor;
+	f32x4 pointColor;
 };
 
 @implementation PreviewView
@@ -21,7 +27,8 @@ struct Arguments
 	id<MTLCommandQueue> commandQueue;
 	IOSurfaceRef iosurface;
 	id<MTLTexture> texture;
-	id<MTLRenderPipelineState> pipelineState;
+	id<MTLRenderPipelineState> pointsPipelineState;
+	id<MTLRenderPipelineState> colorizePipelineState;
 
 	u64 pointCapacity;
 	u64 pointCount;
@@ -44,19 +51,33 @@ struct Arguments
 	commandQueue = [device newCommandQueue];
 
 	id<MTLLibrary> library = [device newDefaultLibrary];
-	MTLRenderPipelineDescriptor *descriptor = [[MTLRenderPipelineDescriptor alloc] init];
-	descriptor.vertexFunction = [library newFunctionWithName:@"VertexMain"];
-	descriptor.fragmentFunction = [library newFunctionWithName:@"FragmentMain"];
 
-	MTLRenderPipelineColorAttachmentDescriptor *attachmentDescriptor =
-	        descriptor.colorAttachments[0];
-	attachmentDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
-	attachmentDescriptor.blendingEnabled = YES;
-	attachmentDescriptor.destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-	attachmentDescriptor.destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-	attachmentDescriptor.sourceRGBBlendFactor = MTLBlendFactorOne;
-	attachmentDescriptor.sourceAlphaBlendFactor = MTLBlendFactorOne;
-	pipelineState = [device newRenderPipelineStateWithDescriptor:descriptor error:nil];
+	{
+		MTLRenderPipelineDescriptor *descriptor =
+		        [[MTLRenderPipelineDescriptor alloc] init];
+		descriptor.vertexFunction = [library newFunctionWithName:@"PointsVertex"];
+		descriptor.fragmentFunction = [library newFunctionWithName:@"PointsFragment"];
+
+		MTLRenderPipelineColorAttachmentDescriptor *attachmentDescriptor =
+		        descriptor.colorAttachments[0];
+		attachmentDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
+		pointsPipelineState = [device newRenderPipelineStateWithDescriptor:descriptor
+		                                                             error:nil];
+	}
+
+	{
+		MTLTileRenderPipelineDescriptor *descriptor =
+		        [[MTLTileRenderPipelineDescriptor alloc] init];
+		descriptor.tileFunction = [library newFunctionWithName:@"Colorize"];
+		descriptor.threadgroupSizeMatchesTileSize = YES;
+		descriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+
+		colorizePipelineState =
+		        [device newRenderPipelineStateWithTileDescriptor:descriptor
+		                                                 options:MTLPipelineOptionNone
+		                                              reflection:nil
+		                                                   error:nil];
+	}
 
 	pointCapacity = 128 * 1024;
 	positionsBuffer = [device newBufferWithLength:pointCapacity * sizeof(positions[0])
@@ -82,22 +103,22 @@ struct Arguments
 {
 	f32 scaleFactor = (f32)self.window.backingScaleFactor;
 
-	Arguments arguments = {0};
+	PointsArguments pointsArguments = {0};
 
 	NSSize resolution = [self convertSizeToBacking:self.bounds.size];
-	arguments.resolution.x = (f32)resolution.width;
-	arguments.resolution.y = (f32)resolution.height;
+	pointsArguments.resolution.x = (f32)resolution.width;
+	pointsArguments.resolution.y = (f32)resolution.height;
 
-	arguments.pointSize = config.pointSize * scaleFactor;
+	pointsArguments.pointSize = config.pointSize * scaleFactor;
 
 	f32 velocity = 0;
 	f32 current = 0;
-	f32 target = arguments.resolution.y * 0.5f;
+	f32 target = pointsArguments.resolution.y * 0.5f;
 	f32 cursor = 0;
-	f32 step = config.stepMultiplier * arguments.pointSize;
+	f32 step = config.stepMultiplier * pointsArguments.pointSize;
 	for (pointCount = 0; pointCount < pointCapacity; pointCount++)
 	{
-		if (cursor > arguments.resolution.x + arguments.pointSize / 2)
+		if (cursor > pointsArguments.resolution.x + pointsArguments.pointSize / 2)
 		{
 			break;
 		}
@@ -113,28 +134,14 @@ struct Arguments
 		current += velocity * step;
 	}
 
-	NSColor *color = [NSColor.labelColor colorUsingColorSpace:self.window.colorSpace];
-	arguments.color.r = (f32)color.redComponent;
-	arguments.color.g = (f32)color.greenComponent;
-	arguments.color.b = (f32)color.blueComponent;
-	arguments.color.a = (f32)color.alphaComponent;
-
-	NSColor *backgroundColor =
-	        [NSColor.textBackgroundColor colorUsingColorSpace:self.window.colorSpace];
-	MTLClearColor clearColor = {0};
-	clearColor.red = backgroundColor.redComponent;
-	clearColor.green = backgroundColor.greenComponent;
-	clearColor.blue = backgroundColor.blueComponent;
-	clearColor.alpha = backgroundColor.alphaComponent;
-
-	arguments.positionsAddress = positionsBuffer.gpuAddress;
+	pointsArguments.positionsAddress = positionsBuffer.gpuAddress;
 
 	id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
 
 	MTLRenderPassDescriptor *descriptor = [[MTLRenderPassDescriptor alloc] init];
 	descriptor.colorAttachments[0].texture = texture;
 	descriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-	descriptor.colorAttachments[0].clearColor = clearColor;
+	descriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
 
 	id<MTLRenderCommandEncoder> encoder =
 	        [commandBuffer renderCommandEncoderWithDescriptor:descriptor];
@@ -142,13 +149,34 @@ struct Arguments
 	[encoder useResource:positionsBuffer
 	               usage:MTLResourceUsageRead
 	              stages:MTLRenderStageVertex | MTLRenderStageFragment];
-	[encoder setRenderPipelineState:pipelineState];
-	[encoder setVertexBytes:&arguments length:sizeof(arguments) atIndex:0];
-	[encoder setFragmentBytes:&arguments length:sizeof(arguments) atIndex:0];
+	[encoder setRenderPipelineState:pointsPipelineState];
+	[encoder setVertexBytes:&pointsArguments length:sizeof(pointsArguments) atIndex:0];
+	[encoder setFragmentBytes:&pointsArguments length:sizeof(pointsArguments) atIndex:0];
 	[encoder drawPrimitives:MTLPrimitiveTypeTriangle
 	            vertexStart:0
 	            vertexCount:6
 	          instanceCount:pointCount];
+
+	ColorizeArguments colorizeArguments = {0};
+
+	NSColor *backgroundColor =
+	        [NSColor.textBackgroundColor colorUsingColorSpace:self.window.colorSpace];
+	colorizeArguments.backgroundColor.r = (f32)backgroundColor.redComponent;
+	colorizeArguments.backgroundColor.g = (f32)backgroundColor.greenComponent;
+	colorizeArguments.backgroundColor.b = (f32)backgroundColor.blueComponent;
+	colorizeArguments.backgroundColor.a = (f32)backgroundColor.alphaComponent;
+	colorizeArguments.backgroundColor.rgb *= colorizeArguments.backgroundColor.a;
+
+	NSColor *color = [NSColor.labelColor colorUsingColorSpace:self.window.colorSpace];
+	colorizeArguments.pointColor.r = (f32)color.redComponent;
+	colorizeArguments.pointColor.g = (f32)color.greenComponent;
+	colorizeArguments.pointColor.b = (f32)color.blueComponent;
+	colorizeArguments.pointColor.a = (f32)color.alphaComponent;
+	colorizeArguments.pointColor.rgb *= colorizeArguments.pointColor.a;
+
+	[encoder setRenderPipelineState:colorizePipelineState];
+	[encoder setTileBytes:&colorizeArguments length:sizeof(colorizeArguments) atIndex:0];
+	[encoder dispatchThreadsPerTile:MTLSizeMake(encoder.tileWidth, encoder.tileHeight, 1)];
 
 	[encoder endEncoding];
 
