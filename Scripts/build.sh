@@ -2,7 +2,7 @@
 
 set -e
 
-clang-format -i Source/*.m Source/*.h
+clang-format -i Source/*.m Source/*.h Source/*.metal
 
 rm -rf "Build"
 

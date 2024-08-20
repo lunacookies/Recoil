@@ -37,16 +37,18 @@ struct PointsRasterizerData
 };
 
 constant f32x2 rectVertices[] = {
-	f32x2(0,0),
-	f32x2(1,0),
-	f32x2(0,1),
-	f32x2(0,1),
-	f32x2(1,1),
-	f32x2(1,0),
+        f32x2(0, 0),
+        f32x2(1, 0),
+        f32x2(0, 1),
+        f32x2(0, 1),
+        f32x2(1, 1),
+        f32x2(1, 0),
 };
 
 vertex PointsRasterizerData
-PointsVertex(u32 vertexID [[vertex_id]], u32 instanceID [[instance_id]], constant PointsArguments &arguments)
+PointsVertex(u32 vertexID [[vertex_id]],
+        u32 instanceID [[instance_id]],
+        constant PointsArguments &arguments)
 {
 	f32x2 center = arguments.positions[instanceID];
 	f32 padding = 1; // stop anti-aliased edges from being cut off
@@ -72,7 +74,7 @@ PointsFragment(PointsRasterizerData input [[stage_in]], constant PointsArguments
 {
 	f32 distanceToCenter = length(abs(input.position - input.center));
 	f32 pointRadius = arguments.pointSize / 2;
-	f32 distanceToEdge =  distanceToCenter - pointRadius;
+	f32 distanceToEdge = distanceToCenter - pointRadius;
 	return 1 - clamp(distanceToEdge, 0.f, 1.f);
 }
 
