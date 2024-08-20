@@ -58,7 +58,7 @@ struct Arguments
 	attachmentDescriptor.sourceAlphaBlendFactor = MTLBlendFactorOne;
 	pipelineState = [device newRenderPipelineStateWithDescriptor:descriptor error:nil];
 
-	pointCapacity = 1024 * 1024;
+	pointCapacity = 128 * 1024;
 	positionsBuffer = [device newBufferWithLength:pointCapacity * sizeof(positions[0])
 	                                      options:MTLResourceCPUCacheModeDefaultCache |
 	                                              MTLResourceStorageModeShared |
